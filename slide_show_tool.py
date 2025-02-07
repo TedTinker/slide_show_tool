@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
 
+
+
 def add_pos(box, pos_2):
     pos_1 = box.pos
     return(pos_1[0] + pos_2[0], pos_1[1] + pos_2[1])
     
+    
 
 class Box:
-    def __init__(self, text, pos, steps, width=1.0, height=1.0):
+    def __init__(self, text, pos, width=1.0, height=1.0):
         """
         text: String representing the label for this box.
               - If you want math mode, include the $...$ in text yourself.
@@ -21,12 +24,13 @@ class Box:
         """
         self.text = text
         self.pos = pos
-        self.steps = steps
         self.width = width
         self.height = height
+        
+        
 
 class Arrow:
-    def __init__(self, start_box, stop_box, steps="all", double_arrow=False, color="black"):
+    def __init__(self, start_box, stop_box, double_arrow=False, color="black"):
         """
         start_box, stop_box: Box objects
         steps: "all" or list of slide indices on which this arrow should appear
@@ -35,9 +39,10 @@ class Arrow:
         """
         self.start_box = start_box
         self.stop_box = stop_box
-        self.steps = steps
         self.double_arrow = double_arrow
         self.color = color
+        
+        
 
 def box_edge_anchor(boxA, boxB):
     """
@@ -76,71 +81,57 @@ def box_edge_anchor(boxA, boxB):
 
 
 
-
-
-# -------------------------
-# PLOTTING FUNCTION
-# -------------------------
-def plot_slide(slide_number, box_list, arrow_list):
-    """
-    Plots all boxes and arrows that are relevant for the given slide_number.
-    """
-    
-    # Gather minimum and maximum x and y poss
-    all_x_poss = [box.pos[0] for box in box_list]
-    all_y_poss = [box.pos[1] for box in box_list]
-    min_x_pos = min(all_x_poss)
-    max_x_pos = max(all_x_poss)
-    min_y_pos = min(all_y_poss)
-    max_y_pos = max(all_y_poss)
-
-    # Gather all slides mentioned by boxes
-    all_slide_numbers = sorted({s for box in box_list for s in box.steps})
-    fig, ax = plt.subplots(figsize=(15, 15))  # Larger figure
-    ax.set_title(f"Slide {slide_number}", fontsize=16)
-    
-    # Boxes to display on this slide
-    boxes_on_this_slide = [b for b in box_list if slide_number in b.steps]
-    
-    # Draw each box as a rectangle + text inside
-    for b in boxes_on_this_slide:
-        (cx, cy) = b.pos
-        # The lower-left corner of the rectangle
-        llx = cx - b.width/2.0
-        lly = cy - b.height/2.0
+class Slide:
+    def __init__(self, slide_title, box_list, arrow_list):
+        self.slide_title = slide_title
+        self.box_list = box_list 
+        self.arrow_list = arrow_list
         
-        # Draw rectangle
-        rect = patches.Rectangle(
-            (llx, lly),
-            b.width,
-            b.height,
-            edgecolor="black",
-            facecolor="white"
-        )
-        ax.add_patch(rect)
-        
-        # If user manually included $ in b.text, they want math mode.
-        # Otherwise, show it as plain text.
-        if "$" in b.text:
-            label = b.text  # the user is explicitly in math mode
-        else:
-            label = b.text  # plain text
+    def plot_slide(self, min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos, axes = False):
+        fig, ax = plt.subplots(figsize=(15, 15))  # Larger figure_
+        ax.set_title(self.slide_title, fontsize=16)
 
-        ax.text(cx, cy, label,
-                ha="center", va="center", fontsize=20)
-    
-    # Draw arrows
-    for arr in arrow_list:
-        if arr.steps == "all" or slide_number in arr.steps:
+        # Draw each box as a rectangle + text inside
+        for box in self.box_list:
+            if(box.pos == "center"):
+                (cx, cy) = center_pos 
+            else:
+                (cx, cy) = box.pos
+            # The lower-left corner of the rectangle
+            llx = cx - box.width/2.0
+            lly = cy - box.height/2.0
+            
+            # Draw rectangle
+            rect = patches.Rectangle(
+                (llx, lly),
+                box.width,
+                box.height,
+                edgecolor="black",
+                facecolor="white"
+            )
+            ax.add_patch(rect)
+            
+            # If user manually included $ in box.text, they want math mode.
+            # Otherwise, show it as plain text.
+            if "$" in box.text:
+                label = box.text  # the user is explicitly in math mode
+            else:
+                label = box.text  # plain text
+
+            ax.text(cx, cy, label,
+                    ha="center", va="center", fontsize=20)
+        
+        # Draw arrows
+        for arrow in self.arrow_list:
             # Check both boxes are on this slide
-            if (arr.start_box in boxes_on_this_slide and 
-                arr.stop_box in boxes_on_this_slide):
+            if (arrow.start_box in self.box_list and 
+                arrow.stop_box in self.box_list):
                 
-                start_x, start_y = box_edge_anchor(arr.start_box, arr.stop_box)
-                end_x, end_y = box_edge_anchor(arr.stop_box, arr.start_box)
+                start_x, start_y = box_edge_anchor(arrow.start_box, arrow.stop_box)
+                end_x, end_y = box_edge_anchor(arrow.stop_box, arrow.start_box)
                 
                 # Arrow style
-                style = "<->" if arr.double_arrow else "->"
+                style = "<->" if arrow.double_arrow else "->"
                 
                 ax.annotate(
                     "",  # no text
@@ -148,18 +139,42 @@ def plot_slide(slide_number, box_list, arrow_list):
                     xytext=(start_x, start_y),
                     arrowprops=dict(
                         arrowstyle=style, 
-                        color=arr.color, 
+                        color=arrow.color, 
                         linewidth=1.5
                     )
                 )
+            else:
+                print(f"Warning: arrow from {arrow.start_box.text} to {arrow.stop_box.text} in a slide without the boxes.")
+        
+        ax.set_xlim(min_x_pos - 1, max_x_pos + 1)
+        ax.set_ylim(min_y_pos - 1, max_y_pos + 1)
+        ax.set_aspect('equal', adjustable='box')
+        if(not axes):
+            plt.axis('off')
+        plt.show()
+
+
+
+def get_sizes(slide_list):
+    min_xs, max_xs, min_ys, max_ys = [], [], [], []
+    for slide in slide_list:
+        # Gather minimum and maximum x and y poss
+        all_x_poss = [box.pos[0] for box in slide.box_list if box.pos != "center"]
+        all_y_poss = [box.pos[1] for box in slide.box_list if box.pos != "center"]
+        if(all_x_poss != []):
+            min_xs.append(min(all_x_poss))
+            max_xs.append(max(all_x_poss))
+        if(all_y_poss != []):
+            min_ys.append(min(all_y_poss))
+            max_ys.append(max(all_y_poss))
+    min_x_pos = min(min_xs)
+    max_x_pos = max(max_xs)
+    min_y_pos = min(min_ys)
+    max_y_pos = max(max_ys)
     
-    ax.set_xlim(min_x_pos - 1, max_x_pos + 1)
-    ax.set_ylim(min_y_pos - 1, max_y_pos + 1)
-    ax.set_aspect('equal', adjustable='box')
-    plt.show()
-
-
-
+    center_pos = ((max_x_pos + min_x_pos) / 2, (max_y_pos + min_y_pos) / 2)
+    
+    return min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos
 
 
 
@@ -173,7 +188,6 @@ if(__name__ == "__main__"):
     a = Box(
         text=r"$A$",                 
         pos=(0, 0),
-        steps=[i for i in range(0, 4)],
         width=1,
         height=1)
     box_list.append(a)
@@ -181,7 +195,6 @@ if(__name__ == "__main__"):
     b = Box(
         text=r"$B$",                 
         pos=(2, 0),
-        steps=[i for i in range(1, 4)],
         width=1,
         height=1)
     box_list.append(b)
@@ -189,39 +202,55 @@ if(__name__ == "__main__"):
     c = Box(
         text=r"$C$",                 
         pos=(0, 2),
-        steps=[i for i in range(2, 4)],
         width=1,
         height=1)
     box_list.append(c)
 
     d = Box(
         text=r"$D$",                 
-        pos=(2, 2),
-        steps=[i for i in range(3, 4)],
+        pos=(2, 4),
         width=1,
         height=1)
     box_list.append(d)
 
     arrow_1 = Arrow(
         start_box=a, 
-        stop_box=b,
-        steps="all")
+        stop_box=b)
     arrow_list.append(arrow_1)
 
     arrow_2 = Arrow(
         start_box=c, 
-        stop_box=d,
-        steps="all")
+        stop_box=d)
     arrow_list.append(arrow_2)
 
     arrow_3 = Arrow(
         start_box=a, 
-        stop_box=d,
-        steps="all")
+        stop_box=d)
     arrow_list.append(arrow_3)
     
-    # -------------------------
-    # MAIN LOOP
-    # -------------------------
-    for slide_number in [0, 1, 2, 3]:
-        plot_slide(slide_number, box_list, arrow_list)
+    
+    slide_list = [
+        Slide(
+            slide_title = 1,
+            box_list = [a],
+            arrow_list = []),
+        
+        Slide(
+            slide_title = 2,
+            box_list = [a, b],
+            arrow_list = [arrow_1]),
+        
+        Slide(
+            slide_title = 3,
+            box_list = [a, b, c],
+            arrow_list = [arrow_1]),
+        
+        Slide(
+            slide_title = 4,
+            box_list = [a, b, c, d],
+            arrow_list = [arrow_1, arrow_2, arrow_3]),
+    ]
+    
+    min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos = get_sizes(slide_list)
+    for slide in slide_list:
+        slide.plot_slide(min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos)
