@@ -13,12 +13,40 @@ prior_post_width = 2.3
 
 
 
+def make_hidden_state_box(t, v, pos=(0, 0), width=default_width, height=0.5):
+    if t < 0:
+        t_name = f"m{-t}"
+    else:
+        t_name = str(t)
+    text_string = fr"$d^{{\#{v}}}_{{t={t}}}$"
+    hidden_state_box = Box(
+        text=text_string,
+        pos=pos,
+        width=width,
+        height=height)
+    return(hidden_state_box)
+    
+hidden_state_m1_0 = make_hidden_state_box(-1, 0)
+hidden_state_m1_1 = make_hidden_state_box(-1, 1)
+hidden_state_m1_2 = make_hidden_state_box(-1, 2)
+
+hidden_state_0_0 = make_hidden_state_box(0, 0, pos = add_pos(hidden_state_m1_0, hidden_to_hidden))
+hidden_state_0_1 = make_hidden_state_box(0, 1, pos = add_pos(hidden_state_m1_0, hidden_to_hidden))
+hidden_state_0_2 = make_hidden_state_box(0, 2, pos = add_pos(hidden_state_m1_0, hidden_to_hidden))
+
+hidden_state_1_0 = make_hidden_state_box(1, 0, pos = add_pos(hidden_state_0_0, hidden_to_hidden))
+hidden_state_1_1 = make_hidden_state_box(1, 1, pos = add_pos(hidden_state_0_0, hidden_to_hidden))
+hidden_state_1_2 = make_hidden_state_box(1, 2, pos = add_pos(hidden_state_0_0, hidden_to_hidden))
+
+hidden_state_2_0 = make_hidden_state_box(2, 0, pos = add_pos(hidden_state_1_0, hidden_to_hidden))
+hidden_state_2_1 = make_hidden_state_box(2, 1, pos = add_pos(hidden_state_1_0, hidden_to_hidden))
+hidden_state_2_2 = make_hidden_state_box(2, 2, pos = add_pos(hidden_state_1_0, hidden_to_hidden))
+
+
+
+
 # Step 1
-hidden_state_m1_0 = Box(
-    text=r"$d^{\#0}_{t=-1}$",                 
-    pos=(0, 0),
-    width=default_width,
-    height=0.5)
+
 
 hidden_state_m1_0_side_text = Box(
     text="Initiate hidden state/context/\nlatent state as zeroes",  
@@ -80,12 +108,6 @@ slide_2 = Slide(
 
 
 # Step 3
-hidden_state_0_0 = Box(
-    text=r"$d^{\#0}_{t=0}$",                 
-    pos=add_pos(hidden_state_m1_0, hidden_to_hidden),
-    width=default_width,
-    height=.5)
-
 hidden_state_0_0_side_text = Box(
     text="Generate first\n$t=0$ hidden state",  
     pos=add_pos(hidden_state_0_0, (0, -1)),
@@ -247,7 +269,7 @@ slide_6 = Slide(
 
 # Step 7
 first_backprop_side_text = Box(
-    text="With backpropogation,\nupdate initial hidden state,\n$t=0$ posterior inner state",  
+    text="With backpropogation,\nupdate hidden state $t=-1$ and\nposterior inner state for t = 0",  
     pos=(2, 4),
     width=0,
     height=0)
@@ -279,12 +301,6 @@ first_backprop_complete_side_text = Box(
     pos=(2, 3),
     width=0,
     height=0)
-
-hidden_state_m1_1 = Box(
-    text=r"$d^{\#1}_{t=-1}$",                 
-    pos=(0, 0),
-    width=default_width,
-    height=0.5)
 
 post_0_1 = Box(
     text=r"$(\mu^{q,\#1}_{t=0}, \sigma^{q,\#1}_{t=0}) \rightarrow z^{q,\#1}_{t=0}$",  
@@ -320,12 +336,6 @@ prior_0_1 = Box(
 make_prior_0_1 = Arrow(
     start_box=hidden_state_m1_1, 
     stop_box=prior_0_1)
-
-hidden_state_0_1 = Box(
-    text=r"$d^{\#1}_{t=0}$",                 
-    pos=add_pos(hidden_state_m1_0, hidden_to_hidden),
-    width=default_width,
-    height=0.5)
 
 make_hidden_state_0_1_a = Arrow(
     start_box=hidden_state_m1_1, 
@@ -378,6 +388,7 @@ make_complex_loss_0_1_b = Arrow(
 slide_9 = Slide(
     slide_title = 9,
     box_list = [
+        do_that_again_side_text,
         hidden_state_m1_1, 
         post_0_1,
         prior_0_1,
@@ -432,12 +443,6 @@ slide_10 = Slide(
 
 
 # Step 11
-hidden_state_1_0 = Box(
-    text=r"$d^{\#0}_{t=1}$",                 
-    pos=add_pos(hidden_state_0_1, hidden_to_hidden),
-    width=default_width,
-    height=0.5)
-
 hidden_state_1_0_side_text = Box(
     text="Generate first\n$t=1$ hidden state",  
     pos=add_pos(hidden_state_1_0, (0, -1)),
@@ -507,7 +512,7 @@ make_pred_x_1_0 = Arrow(
 accuracy_loss_1_0 = Box(
     text=r"$L^{A, \#0}_{t=1}$",                 
     pos=add_pos(pred_x_1_0, (0, -1)),
-    width=0.5,
+    width=default_width,
     height=0.5)
 
 real_x_1 = Box(
@@ -577,6 +582,97 @@ slide_12 = Slide(
 
 
 
+# Step 13
+second_backprop_side_text = Box(
+    text="With backpropogation,\nupdate hidden state $t=-1$ and\nposterior inner state for t = 0, 1",  
+    pos=(2, 4),
+    width=0,
+    height=0)
+
+slide_13 = Slide(
+    slide_title = 13,
+    box_list = [
+        hidden_state_m1_1, 
+        post_0_1,
+        prior_0_1,
+        hidden_state_0_1, 
+        pred_x_0_1, 
+        accuracy_loss_0_1,
+        real_x_0,
+        complex_loss_0_1,
+        post_1_0, 
+        hidden_state_1_0, 
+        prior_1_0,
+        hidden_state_1_0, 
+        pred_x_1_0, 
+        accuracy_loss_1_0,
+        real_x_1,
+        complex_loss_1_0,
+        post_0_1, 
+        hidden_state_0_1,
+        second_backprop_side_text],
+    arrow_list = [
+        make_prior_0_1,
+        make_hidden_state_0_1_a, make_hidden_state_0_1_b,
+        make_pred_x_0_1,
+        make_accuracy_loss_0_1_a, make_accuracy_loss_0_1_b,
+        make_complex_loss_0_1_a, make_complex_loss_0_1_b,
+        make_hidden_state_1_0_a, make_hidden_state_1_0_b,
+        make_prior_1_0,
+        make_hidden_state_1_0_a, make_hidden_state_1_0_b,
+        make_pred_x_1_0,
+        make_accuracy_loss_1_0_a, make_accuracy_loss_1_0_b,
+        make_complex_loss_1_0_a, make_complex_loss_1_0_b])
+
+
+
+# Step 14
+second_backprop_complete_side_text = Box(
+    text="Values updated",  
+    pos=(2, 3),
+    width=0,
+    height=0)
+
+post_0_2 = Box(
+    text=r"$(\mu^{q,\#2}_{t=0}, \sigma^{q,\#2}_{t=0}) \rightarrow z^{q,\#2}_{t=0}$",  
+    pos=add_pos(hidden_state_m1_2, hidden_to_post),
+    width=prior_post_width,
+    height=0.5)
+
+post_1_1 = Box(
+    text=r"$(\mu^{q,\#1}_{t=1}, \sigma^{q,\#1}_{t=1}) \rightarrow z^{q,\#1}_{t=1}$",  
+    pos=add_pos(hidden_state_0_1, hidden_to_post),
+    width=prior_post_width,
+    height=0.5)
+
+
+
+slide_14 = Slide(
+    slide_title = 14,
+    box_list = [
+        second_backprop_complete_side_text,
+        hidden_state_m1_2,
+        post_0_2,
+        post_1_1],
+    arrow_list = [])
+
+
+
+# Step 15
+and_so_on_side_text = Box(
+    text="And so on",  
+    pos=(2, 3),
+    width=0,
+    height=0)
+
+
+
+
+
+
+
+
+
 slide_list = [
     slide_1,
     slide_2,
@@ -589,7 +685,9 @@ slide_list = [
     slide_9,
     slide_10,
     slide_11,
-    slide_12]
+    slide_12,
+    slide_13,
+    slide_14]
 
 min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos = get_sizes(slide_list)
 
@@ -627,7 +725,7 @@ example = Box(
     height=.5)
 
 hashtag_text = Box(
-    text="Superscript with # is\nhow many times the variable\nhas been revised",
+    text="Superscript with # is\nhow many times the variable\nhas been updated",
     pos=add_pos(example, (3, .5)),
     width=0,
     height=0)
@@ -639,7 +737,7 @@ hashtag_side = Box(
     height=0)
 
 t_text = Box(
-    text="Subscript with $t=$ is\nwhich time-step the\nvariable exists in.",
+    text="Subscript with $t=$ is\nwhich time-step the\nvariable exists in",
     pos=add_pos(example, (3, -.5)),
     width=0,
     height=0)
