@@ -30,15 +30,26 @@ class Box:
         
 
 class Arrow:
-    def __init__(self, start_box, stop_box, double_arrow=False, color="black"):
+    def __init__(
+        self,
+        start_box,
+        stop_box,
+        start_pos=(0, 0),
+        stop_pos=(0, 0),
+        double_arrow=False,
+        color="black"
+    ):
         """
-        start_box, stop_box: Box objects
-        steps: "all" or list of slide indices on which this arrow should appear
-        double_arrow: whether it's a <-> or -> arrow
-        color: arrow color
+        start_box, stop_box: Box objects.
+        start_pos, stop_pos: (dx, dy) offsets to shift the arrow start/end.
+                             Default (0,0) means no shift.
+        double_arrow: whether it's a <-> or -> arrow.
+        color: arrow color (default black).
         """
         self.start_box = start_box
         self.stop_box = stop_box
+        self.start_pos = start_pos
+        self.stop_pos = stop_pos
         self.double_arrow = double_arrow
         self.color = color
         
@@ -82,17 +93,18 @@ def box_edge_anchor(boxA, boxB):
 
 
 class Slide:
-    def __init__(self, slide_title, box_list, arrow_list):
+    def __init__(self, slide_title = "TITLE", box_list = [], arrow_list = [], side_text_list = []):
         self.slide_title = slide_title
         self.box_list = box_list 
         self.arrow_list = arrow_list
+        self.side_text_list = side_text_list
         
     def plot_slide(self, min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos, axes = False):
         fig, ax = plt.subplots(figsize=(15, 15))  # Larger figure_
         ax.set_title(self.slide_title, fontsize=16)
 
         # Draw each box as a rectangle + text inside
-        for box in self.box_list:
+        for box in self.box_list + self.side_text_list:
             if(box.pos == "center"):
                 (cx, cy) = center_pos 
             else:
@@ -123,35 +135,44 @@ class Slide:
         
         # Draw arrows
         for arrow in self.arrow_list:
-            # Check both boxes are on this slide
-            if (arrow.start_box in self.box_list and 
+            # Only draw arrow if both boxes are on this slide
+            if (arrow.start_box in self.box_list and
                 arrow.stop_box in self.box_list):
-                
+
+                # Find the default anchor points on each box's edge
                 start_x, start_y = box_edge_anchor(arrow.start_box, arrow.stop_box)
                 end_x, end_y = box_edge_anchor(arrow.stop_box, arrow.start_box)
-                
-                # Arrow style
+
+                # Apply any user-defined offsets
+                start_x += arrow.start_pos[0]
+                start_y += arrow.start_pos[1]
+                end_x   += arrow.stop_pos[0]
+                end_y   += arrow.stop_pos[1]
+
                 style = "<->" if arrow.double_arrow else "->"
                 
                 ax.annotate(
-                    "",  # no text
+                    "",  # no label text
                     xy=(end_x, end_y),
                     xytext=(start_x, start_y),
                     arrowprops=dict(
-                        arrowstyle=style, 
-                        color=arrow.color, 
+                        arrowstyle=style,
+                        color=arrow.color,
                         linewidth=1.5
                     )
                 )
             else:
-                print(f"Warning: arrow from {arrow.start_box.text} to {arrow.stop_box.text} in a slide without the boxes.")
+                print(f"Warning: arrow from {arrow.start_box.text} to "
+                    f"{arrow.stop_box.text} in a slide without those boxes.")
+
         
         ax.set_xlim(min_x_pos - 1, max_x_pos + 1)
         ax.set_ylim(min_y_pos - 1, max_y_pos + 1)
         ax.set_aspect('equal', adjustable='box')
         if(not axes):
             plt.axis('off')
-        plt.show()
+        plt.savefig(f"saved_slides/slide_{self.slide_title}.png", dpi=150)
+        plt.close()
 
 
 
