@@ -150,17 +150,20 @@ for t in [0, 1, 2]:
             make_prior_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{t_name_maker(t-1)}_{v}"], 
                 stop_box = box_dict[f"prior_{t}_{v}"], 
-                stop_pos = hidden_to_prior_stop_offset)
+                stop_pos = hidden_to_prior_stop_offset,
+                text = "$w_{d,p}$")
         elif(v > 0):
             make_prior_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{t_name_maker(t-1)}_{v}"], 
                 stop_box = box_dict[f"prior_{t}_{v-1}"], 
-                stop_pos = hidden_to_prior_stop_offset)
+                stop_pos = hidden_to_prior_stop_offset,
+                text = "$w_{d,p}$")
         else:
             make_prior_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{0}_{0}"], 
                 stop_box = box_dict[f"prior_{0}_{0}"], 
-                stop_pos = hidden_to_prior_stop_offset)
+                stop_pos = hidden_to_prior_stop_offset,
+                text = "$w_{d,p}$")
         arrow_dict[make_prior_name] = make_prior_arrow
         
         # Connect hidden_state to next hidden_state
@@ -168,15 +171,18 @@ for t in [0, 1, 2]:
         if(t == 0):
             make_hidden_state_a_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{t_name_maker(t-1)}_{v}"], 
-                stop_box = box_dict[f"hidden_state_{t}_{v}"])
+                stop_box = box_dict[f"hidden_state_{t}_{v}"],
+                text = "$w_{d,d}$")
         elif(v > 0):
             make_hidden_state_a_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{t_name_maker(t-1)}_{v}"], 
-                stop_box = box_dict[f"hidden_state_{t}_{v-1}"])
+                stop_box = box_dict[f"hidden_state_{t}_{v-1}"],
+                text = "$w_{d,d}$")
         else:
             make_hidden_state_a_arrow = Arrow(
                 start_box = box_dict[f"hidden_state_{0}_{0}"], 
-                stop_box = box_dict[f"hidden_state_{0}_{0}"])
+                stop_box = box_dict[f"hidden_state_{0}_{0}"],
+                text = "$w_{d,d}$")
         arrow_dict[make_hidden_state_a_name] = make_hidden_state_a_arrow
         
         # Connect post to hidden
@@ -185,14 +191,16 @@ for t in [0, 1, 2]:
             start_box = box_dict[f"post_{t}_{v}"], 
             stop_box = box_dict[f"hidden_state_{t}_{v}"], 
             start_pos = hidden_to_post_start_offset, 
-            stop_pos = hidden_to_post_stop_offset)
+            stop_pos = hidden_to_post_stop_offset,
+            text = "$w_{q,d}$")
         arrow_dict[make_hidden_state_b_name] = make_hidden_state_b_arrow
         
         # Connect hidden to pred
         make_pred_x_0_0_name = f"make_pred_x_{t}_{v}"
         make_pred_x_arrow = Arrow(
             start_box = box_dict[f"hidden_state_{t}_{v}"], 
-            stop_box = box_dict[f"pred_x_{t}_{v}"])
+            stop_box = box_dict[f"pred_x_{t}_{v}"],
+            text = "$w_{d,x}$")
         arrow_dict[make_pred_x_0_0_name] = make_pred_x_arrow
         
         # Connect pred to accuracy loss
@@ -224,7 +232,8 @@ for t in [0, 1, 2]:
             start_box = box_dict[f"post_{t}_{v}"], 
             stop_box = box_dict[f"complex_loss_{t}_{v}"], 
             start_pos = post_to_complex_start_offset, 
-            stop_pos = post_to_complex_stop_offset)
+            stop_pos = post_to_complex_stop_offset,
+            text = "$D_{KL}$")
         arrow_dict[make_complex_loss_b_name] = make_complex_loss_b_arrow
         
         # Backprop hidden to post

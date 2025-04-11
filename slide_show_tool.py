@@ -37,14 +37,15 @@ class Arrow:
         start_pos=(0, 0),
         stop_pos=(0, 0),
         double_arrow=False,
-        color="black"
+        color="black",
+        text=None  
     ):
         """
         start_box, stop_box: Box objects.
         start_pos, stop_pos: (dx, dy) offsets to shift the arrow start/end.
-                             Default (0,0) means no shift.
         double_arrow: whether it's a <-> or -> arrow.
         color: arrow color (default black).
+        text: optional text label to place at the arrow's midpoint.
         """
         self.start_box = start_box
         self.stop_box = stop_box
@@ -52,6 +53,8 @@ class Arrow:
         self.stop_pos = stop_pos
         self.double_arrow = double_arrow
         self.color = color
+        self.text = text  
+
         
         
 
@@ -161,6 +164,20 @@ class Slide:
                         linewidth=1.5
                     )
                 )
+                mid_x = (start_x + end_x) / 2.0
+                mid_y = (start_y + end_y) / 2.0
+
+                if arrow.text is not None:
+                    if "$" in arrow.text:
+                        label = arrow.text
+                    else:
+                        label = arrow.text  
+                    
+                    ax.text(mid_x, mid_y, label,
+                            ha="center", va="center", 
+                            color=arrow.color,
+                            fontsize=16,
+                            bbox=dict(facecolor="white", edgecolor="none", pad=0.0))
             else:
                 print(f"Warning: arrow from {arrow.start_box.text} to "
                     f"{arrow.stop_box.text} in a slide without those boxes.")
@@ -172,6 +189,7 @@ class Slide:
         if(not axes):
             plt.axis('off')
         plt.savefig(f"saved_slides/slide_{self.slide_title}.png", dpi=150)
+        plt.show()
         plt.close()
 
 
@@ -236,12 +254,14 @@ if(__name__ == "__main__"):
 
     arrow_1 = Arrow(
         start_box=a, 
-        stop_box=b)
+        stop_box=b,
+        text = "$LaTeX$\ncapable")
     arrow_list.append(arrow_1)
 
     arrow_2 = Arrow(
         start_box=c, 
-        stop_box=d)
+        stop_box=d,
+        color = "red")
     arrow_list.append(arrow_2)
 
     arrow_3 = Arrow(
