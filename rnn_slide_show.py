@@ -5,6 +5,10 @@ from slide_show_tool import *
 
 default_width = .75
 
+def make_t_name(t):
+    t_name = "t" if t == 0 else f"t+{t}" if t > 0 else f"t-{-t}"
+    return(t_name)
+
 
 
 hidden_to_hidden = (3.5, 0)
@@ -23,14 +27,6 @@ backprop_hidden_state_to_hidden_state_stop_offset = (0, .1)
 
 
 
-def t_name_maker(t):
-    if t < 0:
-        return f"m{-t}"
-    else:
-        return t
-
-
-
 box_dict = {}
 
 def make_box(
@@ -42,17 +38,13 @@ def make_box(
     height=0.5):
     if text is None:
         if box_type == "input_x":
-            text = fr"$x_{{t={t}}}$"
+            text = fr"$x_{{{t}}}$"
         elif box_type == "hidden_state":
-            text = fr"$d_{{t={t}}}$"
+            text = fr"$d_{{{t}}}$"
         elif box_type == "output_y":
-            text = fr"$y_{{t={t}}}$"
-        elif box_type == "accuracy_loss":
-            text = fr"$L_{{t={t}}}$"
-        elif box_type == "real_x":
-            text = fr"$x_{{t={t}}}$"
+            text = fr"$y_{{{t}}}$"
         else:
-            text = f"Unknown box_type={box_type} (t={t})"
+            text = f"Unknown box_type={box_type} ({t})"
     return Box(
         text=text,
         pos=pos,
@@ -61,173 +53,151 @@ def make_box(
 
 
 
-for t in [0, 1, 2, 3]:
-    t_name = t_name_maker(t)
+for t in [-1, 0, 1, 2]:
+    
+    prev_t_name = make_t_name(t-1)
+    t_name = make_t_name(t)
+    next_t_name = make_t_name(t+1)
 
-    hidden_state_name = f"hidden_state_{t_name}"
+    hidden_state_name = f"hidden_state_{prev_t_name}"
     hidden_state_box = make_box(
-        box_type = "hidden_state", t = t,
-        pos = (0, 0))
+        box_type = "hidden_state", t = prev_t_name,
+        pos = (t*2, 0))
     box_dict[hidden_state_name] = hidden_state_box
-    
-    print(box_dict.keys())
-    
-    input_x_name = f"input_x_{t}"
+        
+    input_x_name = f"input_x_{t_name}"
     input_x_box = make_box(
-        box_type = "input_x", t = t, 
-        pos = add_pos(box_dict[f"hidden_state_{t}"], (0, -1)))
+        box_type = "input_x", t = t_name, 
+        pos = add_pos(box_dict[f"hidden_state_{prev_t_name}"], (1, -1)))
     box_dict[input_x_name] = input_x_box
+    
+for t in [-1, 0, 1]:
+    
+    prev_t_name = make_t_name(t-1)
+    t_name = make_t_name(t)
+    next_t_name = make_t_name(t+1)
             
-    output_y_name = f"output_y_{t}"
+    output_y_name = f"output_y_{t_name}"
     output_y_box = make_box(
-        box_type = "output_y", t = t, 
-        pos = add_pos(box_dict[f"hidden_state_{t}"], (0, -1)))
+        box_type = "output_y", t = t_name, 
+        pos = add_pos(box_dict[f"hidden_state_{t_name}"], (0, -1)))
     box_dict[output_y_name] = output_y_box
     
-    accuracy_loss_name = f"accuracy_loss_{t}"
-    accuracy_loss_box = make_box(
-        box_type = "accuracy_loss", t = t, 
-        pos = add_pos(box_dict[f"output_y_{t}"], (0, -1)))
-    box_dict[accuracy_loss_name] = accuracy_loss_box
-            
+for key, val in box_dict.items():
+    print(f"{key}: \t {val}")
+
 
             
 arrow_dict = {}
 
 for t in [0, 1, 2]:
-    t_name = t_name_maker(t)
+    
+    prev_t_name = make_t_name(t-1)
+    t_name = make_t_name(t)
+    next_t_name = make_t_name(t+1)
 
     # Connect hidden_state to next hidden_state
-    make_hidden_state_a_name = f"make_hidden_state_a_{t}"
-    if(t == 0):
-        make_hidden_state_a_arrow = Arrow(
-            start_box = box_dict[f"hidden_state_{t_name_maker(t-1)}"], 
-            stop_box = box_dict[f"hidden_state_{t}"],
-            text = "$w_{d,d}$")
+    make_hidden_state_a_name = f"make_hidden_state_a_{prev_t_name}"
+    if(t == 2):
+        pass
     else:
         make_hidden_state_a_arrow = Arrow(
-            start_box = box_dict[f"hidden_state_{0}_{0}"], 
-            stop_box = box_dict[f"hidden_state_{0}_{0}"],
+            start_box = box_dict[f"hidden_state_{prev_t_name}"], 
+            stop_box = box_dict[f"hidden_state_{t_name}"],
             text = "$w_{d,d}$")
     arrow_dict[make_hidden_state_a_name] = make_hidden_state_a_arrow
     
-    # Connect hidden to pred
-    make_pred_x_0_0_name = f"make_pred_x_{t}"
-    make_pred_x_arrow = Arrow(
-        start_box = box_dict[f"hidden_state_{t}"], 
-        stop_box = box_dict[f"pred_x_{t}"],
-        text = "$w_{d,x}$")
-    arrow_dict[make_pred_x_0_0_name] = make_pred_x_arrow
-    
-    # Connect pred to accuracy loss
-    make_accuracy_loss_a_name = f"make_accuracy_loss_a_{t}"
-    make_accuracy_loss_a_arrow = Arrow(
-        start_box = box_dict[f"pred_x_{t}"], 
-        stop_box = box_dict[f"accuracy_loss_{t}"])
-    arrow_dict[make_accuracy_loss_a_name] = make_accuracy_loss_a_arrow
-    
-    # Connect real to accuracy loss
-    make_accuracy_loss_b_name = f"make_accuracy_loss_b_{t}"
-    make_accuracy_loss_b_arrow = Arrow(
-        start_box = box_dict[f"real_x_{t}"], 
-        stop_box = box_dict[f"accuracy_loss_{t}"])
-    arrow_dict[make_accuracy_loss_b_name] = make_accuracy_loss_b_arrow
-    
-    # Backprop pred to hidden
-    backprop_pred_hidden_state_name = f"backprop_pred_hidden_state_{t}"
-    backprop_pred_hidden_state_arrow = Arrow(
-        start_box = box_dict[f"pred_x_{t}"], 
-        stop_box = box_dict[f"hidden_state_{t}"], 
-        start_pos = backprop_pred_to_hidden_state_start_offset, 
-        stop_pos = backprop_pred_to_hidden_state_stop_offset, 
-        color = "red")
-    arrow_dict[backprop_pred_hidden_state_name] = backprop_pred_hidden_state_arrow
-    
-    # Backprop accuracy_loss to pred
-    backprop_accuracy_loss_pred_name = f"backprop_accuracy_loss_pred_{t}"
-    backprop_accuracy_loss_pred_arrow = Arrow(
-        start_box = box_dict[f"accuracy_loss_{t}"], 
-        stop_box = box_dict[f"pred_x_{t}"], 
-        start_pos = backprop_accuracy_loss_to_pred_start_offset, 
-        stop_pos = backprop_accuracy_loss_to_pred_stop_offset, 
-        color = "red")
-    arrow_dict[backprop_accuracy_loss_pred_name] = backprop_accuracy_loss_pred_arrow
-    
-    # Backprop hidden to hidden
-    backprop_hidden_state_hidden_state_name = f"backprop_hidden_state_hidden_state_{t}"
-    if(t == 0):
-        backprop_hidden_state_hidden_state_arrow = Arrow(
-            start_box = box_dict[f"hidden_state_0"], 
-            stop_box = box_dict[f"hidden_state_m1"], 
-            start_pos = backprop_hidden_state_to_hidden_state_start_offset, 
-            stop_pos = backprop_hidden_state_to_hidden_state_stop_offset, 
-            color = "red")
+    # Connect input to next hidden_state
+    make_hidden_state_b_name = f"make_hidden_state_b_{t_name}"
+    if(t == 2):
+        pass
     else:
-        backprop_hidden_state_hidden_state_arrow = Arrow(
-            start_box = box_dict[f"hidden_state_{t}"], 
-            stop_box = box_dict[f"hidden_state_{t-1}"], 
-            start_pos = backprop_hidden_state_to_hidden_state_start_offset, 
-            stop_pos = backprop_hidden_state_to_hidden_state_stop_offset, 
-            color = "red")
-    arrow_dict[backprop_hidden_state_hidden_state_name] = backprop_hidden_state_hidden_state_arrow
+        make_hidden_state_b_arrow = Arrow(
+            start_box = box_dict[f"input_x_{t_name}"], 
+            stop_box = box_dict[f"hidden_state_{t_name}"],
+            text = "$w_{x,d}$")
+    arrow_dict[make_hidden_state_b_name] = make_hidden_state_b_arrow
     
+    # Connect hidden to pred
+    make_output_y_0_name = f"make_output_y_{prev_t_name}"
+    make_output_y_arrow = Arrow(
+        start_box = box_dict[f"hidden_state_{prev_t_name}"], 
+        stop_box = box_dict[f"output_y_{prev_t_name}"],
+        text = "$w_{h,y}$")
+    arrow_dict[make_output_y_0_name] = make_output_y_arrow
+    
+for key, val in arrow_dict.items():
+    print(f"{key}: \t {val}")
 
 
 
 # Step 1
-hidden_state_m1_0_side_text = Box(
-    text="Initiate hidden state/context/\nlatent state as zeroes",  
-    pos=add_pos(box_dict["hidden_state_m1_0"], (2.5, -.1)),
+hidden_state_tm1_side_text = Box(
+    text="Hidden state/context/\nlatent state",  
+    pos=add_pos(box_dict["hidden_state_t-1"], (1.5, 0)),
+    width=0,
+    height=0)
+
+input_x_t_side_text = Box(
+    text="Input",  
+    pos=add_pos(box_dict["input_x_t"], (1, 0)),
     width=0,
     height=0)
 
 slide_1 = Slide(
-    slide_title = "1: Initiate",
+    slide_title = "1: Input",
     box_list = [
-        box_dict["hidden_state_m1_0"]],
+        box_dict["hidden_state_t-1"],
+        box_dict["input_x_t"]],
     arrow_list = [],
     side_text_list = [
-        hidden_state_m1_0_side_text])
+        hidden_state_tm1_side_text,
+        input_x_t_side_text])
 
 
 
 # Step 2
-prior_0_0_side_text = Box(
-    text="Generate first $t=0$\nprior inner state\n(or use $(\mu = 0, \sigma = 1)$)",  
-    pos=add_pos(box_dict["prior_0_0"], (0, .75)),
+hidden_state_t_side_text = Box(
+    text="New hidden state",  
+    pos=add_pos(box_dict["hidden_state_t"], (1.4, 0)),
+    width=0,
+    height=0)
+
+output_y_side_text = Box(
+    text="Output",  
+    pos=add_pos(box_dict["output_y_t"], (1, 0)),
     width=0,
     height=0)
 
 slide_2 = Slide(
-    slide_title = "2: Prior inner state",
+    slide_title = "2: Output",
     box_list = slide_1.box_list + [
-        box_dict["prior_0_0"]],
+        box_dict["hidden_state_t"],
+        box_dict["output_y_t"]],
     arrow_list = [
-        arrow_dict["make_prior_0_0"]],
+        arrow_dict["make_hidden_state_a_t-1"], arrow_dict["make_hidden_state_b_t"],
+        arrow_dict["make_output_y_t"]],
     side_text_list = [
-        prior_0_0_side_text])
+        hidden_state_t_side_text,
+        output_y_side_text])
+
+
+
+# Step 3
+slide_3 = Slide(
+    slide_title = "3: And so on",
+    box_list = slide_2.box_list + [
+        box_dict["hidden_state_t+1"],
+        box_dict["input_x_t+1"],
+        box_dict["output_y_t+1"]],
+    arrow_list = slide_2.arrow_list + [
+        arrow_dict["make_hidden_state_a_t"], arrow_dict["make_hidden_state_b_t+1"],
+        arrow_dict["make_output_y_t+1"]],
+    side_text_list = [])
 
 
 
 """
-# Step 3
-hidden_state_0_0_side_text = Box(
-    text="Generate first\n$t=0$ hidden state",  
-    pos=add_pos(box_dict["hidden_state_0_0"], (2, 0)),
-    width=0,
-    height=0)
-
-slide_3 = Slide(
-    slide_title = "3: Hidden state",
-    box_list = slide_2.box_list + [
-        box_dict["hidden_state_0_0"]],
-    arrow_list = slide_2.arrow_list + [
-        arrow_dict["make_hidden_state_a_0_0"], arrow_dict["make_hidden_state_b_0_0"]],
-    side_text_list = [
-        hidden_state_0_0_side_text])
-
-
-
 # Step 4
 pred_x_0_0_side_text = Box(
     text="Generate first estimation of\n$t=0$ observation",  
@@ -478,7 +448,9 @@ slide_14 = Slide(
 """
 
 slide_list = [
-    slide_1]
+    slide_1,
+    slide_2,
+    slide_3]
 
 min_x_pos, max_x_pos, min_y_pos, max_y_pos, center_pos = get_sizes(slide_list)
 
